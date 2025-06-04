@@ -38,10 +38,19 @@ class UserProfile(commands.Cog):
                 location_x INTEGER,
                 location_y INTEGER,
                 bear_trap TEXT,
-                profile_pic TEXT
+                profile_pic TEXT,
+                skip_merge_prompt INTEGER DEFAULT 0
             )
             """
         )
+
+        self.cursor.execute("PRAGMA table_info(profiles)")
+        columns = [row[1] for row in self.cursor.fetchall()]
+        if "skip_merge_prompt" not in columns:
+            self.cursor.execute(
+                "ALTER TABLE profiles ADD COLUMN skip_merge_prompt INTEGER DEFAULT 0"
+            )
+
         self.conn.commit()
 
     def upsert_profile(self, discord_id: int, **kwargs):
@@ -61,10 +70,134 @@ class UserProfile(commands.Cog):
             )
         self.conn.commit()
 
+    def merge_user_data(self, fid: int) -> bool:
+        try:
+            with sqlite3.connect('db/users.sqlite') as users_db:
+                cursor = users_db.cursor()
+                cursor.execute("SELECT fid FROM users WHERE fid=?", (fid,))
+                exists = cursor.fetchone()
+                if exists is None:
+                    cursor.execute("INSERT INTO users (fid) VALUES (?)", (fid,))
+                    users_db.commit()
+            return True
+        except Exception:
+            return False
+
+    def get_skip_prompt(self, discord_id: int) -> bool:
+        self.cursor.execute(
+            "SELECT skip_merge_prompt FROM profiles WHERE discord_id=?",
+            (discord_id,),
+        )
+        row = self.cursor.fetchone()
+        return bool(row[0]) if row else False
+
+    class MergePromptView(discord.ui.View):
+        def __init__(self, cog: 'UserProfile', user_id: int, fid: int):
+            super().__init__()
+            self.cog = cog
+            self.user_id = user_id
+            self.fid = fid
+
+        class BackupPromptView(discord.ui.View):
+            def __init__(self, parent: 'UserProfile.MergePromptView', action: str):
+                super().__init__()
+                self.parent = parent
+                self.action = action  # 'merge' or 'new'
+
+            def perform_action(self) -> str:
+                if self.action == "merge":
+                    success = self.parent.cog.merge_user_data(self.parent.fid)
+                    return "✅ Data merged." if success else "❌ Merge failed."
+                return "Continuing without merging."
+
+            @discord.ui.button(label="Yes, backup", style=discord.ButtonStyle.primary)
+            async def backup_yes(self, interaction: discord.Interaction, button: discord.ui.Button):
+                await interaction.response.defer(ephemeral=True)
+                backup_cog = self.parent.cog.bot.get_cog("BackupOperations")
+                backup_msg = ""
+                if backup_cog:
+                    result = await backup_cog.create_backup(str(self.parent.user_id), backup_cog.default_storage)
+                    if result:
+                        backup_msg = "✅ Backup created. "
+                    else:
+                        backup_msg = "❌ Backup failed. "
+                else:
+                    backup_msg = "❌ Backup system unavailable. "
+                action_msg = self.perform_action()
+                await interaction.followup.send(backup_msg + action_msg, ephemeral=True)
+                self.stop()
+
+            @discord.ui.button(label="No, continue", style=discord.ButtonStyle.secondary)
+            async def backup_no(self, interaction: discord.Interaction, button: discord.ui.Button):
+                await interaction.response.defer(ephemeral=True)
+                action_msg = self.perform_action()
+                await interaction.followup.send(action_msg, ephemeral=True)
+                self.stop()
+
+        @discord.ui.button(label="Merge Data", style=discord.ButtonStyle.primary)
+        async def merge_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            view = self.BackupPromptView(self, "merge")
+            await interaction.response.send_message(
+                "Backup your data before merging?", view=view, ephemeral=True
+            )
+            self.stop()
+
+        @discord.ui.button(label="Continue as New", style=discord.ButtonStyle.secondary)
+        async def continue_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            view = self.BackupPromptView(self, "new")
+            await interaction.response.send_message(
+                "Backup your data before continuing?", view=view, ephemeral=True
+            )
+            self.stop()
+
+        @discord.ui.button(label="Never show again", style=discord.ButtonStyle.danger)
+        async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            self.cog.cursor.execute(
+                "UPDATE profiles SET skip_merge_prompt=1 WHERE discord_id=?",
+                (self.user_id,),
+            )
+            self.cog.conn.commit()
+            await interaction.response.send_message("Merge prompt disabled.", ephemeral=True)
+            self.stop()
+
+        @discord.ui.button(label="Keep reminding me", style=discord.ButtonStyle.secondary)
+        async def keep_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.send_message("Ok, will remind you next time.", ephemeral=True)
+            self.stop()
+
     @app_commands.command(name="set_fid", description="Link your in-game FID to your Discord account")
     async def set_fid(self, interaction: discord.Interaction, fid: int):
         self.upsert_profile(interaction.user.id, fid=fid)
-        await interaction.response.send_message("✅ FID saved.", ephemeral=True)
+
+        fid_status = ""
+        db_path = 'db/users.sqlite'
+        os.makedirs('db', exist_ok=True)
+        file_exists = os.path.exists(db_path)
+        try:
+            with sqlite3.connect(db_path) as users_db:
+                cursor = users_db.cursor()
+                cursor.execute("CREATE TABLE IF NOT EXISTS users (fid INTEGER PRIMARY KEY)")
+                cursor.execute("SELECT fid FROM users WHERE fid=?", (fid,))
+                exists = cursor.fetchone()
+                if exists is None:
+                    cursor.execute("INSERT INTO users (fid) VALUES (?)", (fid,))
+                    users_db.commit()
+                    fid_status = "FID added to users database."
+                else:
+                    fid_status = "FID already exists in users database."
+        except Exception:
+            fid_status = "Error accessing users database."
+
+        if file_exists and not self.get_skip_prompt(interaction.user.id):
+            view = self.MergePromptView(self, interaction.user.id, fid)
+            await interaction.response.send_message(
+                f"✅ FID saved. {fid_status} Choose an option:",
+                view=view,
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(f"✅ FID saved. {fid_status}", ephemeral=True)
 
     @app_commands.command(name="set_location", description="Set your base coordinates")
     async def set_location(self, interaction: discord.Interaction, x: int, y: int):
