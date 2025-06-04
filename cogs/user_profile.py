@@ -170,6 +170,7 @@ class UserProfile(commands.Cog):
         self.upsert_profile(interaction.user.id, fid=fid)
 
         fid_status = ""
+ 90abmq-codex/modify-set_fid-command-to-check-and-insert-fid
         db_path = 'db/users.sqlite'
         os.makedirs('db', exist_ok=True)
         file_exists = os.path.exists(db_path)
@@ -181,6 +182,13 @@ class UserProfile(commands.Cog):
                 cursor.execute(
                     "CREATE TABLE IF NOT EXISTS users (fid INTEGER PRIMARY KEY)"
                 )
+=======
+        try:
+            os.makedirs('db', exist_ok=True)
+            with sqlite3.connect('db/users.sqlite') as users_db:
+                cursor = users_db.cursor()
+                cursor.execute("CREATE TABLE IF NOT EXISTS users (fid INTEGER PRIMARY KEY)")
+ main
                 cursor.execute("SELECT fid FROM users WHERE fid=?", (fid,))
                 exists = cursor.fetchone()
                 if exists is None:
@@ -189,10 +197,17 @@ class UserProfile(commands.Cog):
                     fid_status = "FID added to users database."
                 else:
                     fid_status = "FID already exists in users database."
+ 90abmq-codex/modify-set_fid-command-to-check-and-insert-fid
         except sqlite3.Error:
             fid_status = "Error accessing users database."
 
         if file_exists and not self.get_skip_prompt(interaction.user.id):
+=======
+        except Exception:
+            fid_status = "Error accessing users database."
+
+        if os.path.exists('db/users.sqlite') and not self.get_skip_prompt(interaction.user.id):
+main
             view = self.MergePromptView(self, interaction.user.id, fid)
             await interaction.response.send_message(
                 f"✅ FID saved. {fid_status} Choose an option:",
