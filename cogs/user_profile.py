@@ -44,6 +44,15 @@ class UserProfile(commands.Cog):
         )
         self.conn.commit()
 
+    async def is_admin(self, user_id: int) -> bool:
+        try:
+            with sqlite3.connect('db/settings.sqlite') as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM admin WHERE id = ?", (user_id,))
+                return cursor.fetchone() is not None
+        except Exception:
+            return False
+
     def upsert_profile(self, discord_id: int, **kwargs):
         columns = ', '.join(f"{k}=?" for k in kwargs.keys())
         values = list(kwargs.values())
@@ -84,6 +93,12 @@ class UserProfile(commands.Cog):
     @app_commands.command(name="profile", description="View a member's profile")
     async def profile(self, interaction: discord.Interaction, member: discord.Member=None):
         member = member or interaction.user
+        if member.id != interaction.user.id:
+            if not await self.is_admin(interaction.user.id):
+                await interaction.response.send_message(
+                    "❌ You can only view your own profile.", ephemeral=True
+                )
+                return
         self.cursor.execute("SELECT fid, location_x, location_y, bear_trap, profile_pic FROM profiles WHERE discord_id=?", (member.id,))
         profile = self.cursor.fetchone()
 
