@@ -174,9 +174,13 @@ class UserProfile(commands.Cog):
         os.makedirs('db', exist_ok=True)
         file_exists = os.path.exists(db_path)
         try:
+            # Check the users database for the provided FID and create the
+            # record if it doesn't exist yet
             with sqlite3.connect(db_path) as users_db:
                 cursor = users_db.cursor()
-                cursor.execute("CREATE TABLE IF NOT EXISTS users (fid INTEGER PRIMARY KEY)")
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS users (fid INTEGER PRIMARY KEY)"
+                )
                 cursor.execute("SELECT fid FROM users WHERE fid=?", (fid,))
                 exists = cursor.fetchone()
                 if exists is None:
@@ -185,7 +189,7 @@ class UserProfile(commands.Cog):
                     fid_status = "FID added to users database."
                 else:
                     fid_status = "FID already exists in users database."
-        except Exception:
+        except sqlite3.Error:
             fid_status = "Error accessing users database."
 
         if file_exists and not self.get_skip_prompt(interaction.user.id):
