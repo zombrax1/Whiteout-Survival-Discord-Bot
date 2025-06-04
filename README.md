@@ -36,7 +36,9 @@ Since the release of V4, we've implemented numerous changes and improvements. He
 - Automatic database backup
 - Secure encrypted backups (.zip format)
 - Personal encryption key system
-- Private backup link generation
+- Choose local or remote storage
+  - Local path configurable via `BACKUP_DIR`
+  - Remote uploads to wosland API (`BACKUP_API_URL` & `BACKUP_API_KEY`)
 - Enhanced data privacy
   - Only member IDs are stored
   - Encrypted access
