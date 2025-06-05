@@ -4,6 +4,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import sys
 import os
 import subprocess
+import shutil
 
 def check_and_install_requirements():
     required_packages = {
@@ -250,16 +251,42 @@ if __name__ == "__main__":
         with open(token_file, 'r') as f:
             bot_token = f.read().strip()
 
-    if not os.path.exists('db'):
-        os.makedirs('db')
-        print(Fore.GREEN + "db folder created" + Style.RESET_ALL)
+    db_dir = 'db'
+
+    def ensure_db_files():
+        if not os.path.exists(db_dir):
+            os.makedirs(db_dir)
+            print(Fore.GREEN + f"{db_dir} folder created" + Style.RESET_ALL)
+
+        old_users = 'users.sqlite'
+        new_users = os.path.join(db_dir, 'users.sqlite')
+        if os.path.exists(old_users) and not os.path.exists(new_users):
+            shutil.move(old_users, new_users)
+            print(Fore.GREEN + "users.sqlite moved to db folder" + Style.RESET_ALL)
+
+        required_files = [
+            'alliance.sqlite',
+            'giftcode.sqlite',
+            'changes.sqlite',
+            'users.sqlite',
+            'settings.sqlite',
+            'profile.sqlite',
+        ]
+
+        for fname in required_files:
+            path = os.path.join(db_dir, fname)
+            if not os.path.exists(path):
+                sqlite3.connect(path).close()
+                print(Fore.GREEN + f"{fname} created" + Style.RESET_ALL)
+
+    ensure_db_files()
 
     databases = {
-        "conn_alliance": "db/alliance.sqlite",
-        "conn_giftcode": "db/giftcode.sqlite",
-        "conn_changes": "db/changes.sqlite",
-        "conn_users": "db/users.sqlite",
-        "conn_settings": "db/settings.sqlite",
+        "conn_alliance": os.path.join(db_dir, "alliance.sqlite"),
+        "conn_giftcode": os.path.join(db_dir, "giftcode.sqlite"),
+        "conn_changes": os.path.join(db_dir, "changes.sqlite"),
+        "conn_users": os.path.join(db_dir, "users.sqlite"),
+        "conn_settings": os.path.join(db_dir, "settings.sqlite"),
     }
 
     connections = {name: sqlite3.connect(path) for name, path in databases.items()}
