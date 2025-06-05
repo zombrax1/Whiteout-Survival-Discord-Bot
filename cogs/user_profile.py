@@ -170,8 +170,9 @@ class UserProfile(commands.Cog):
         self.upsert_profile(interaction.user.id, fid=fid)
 
         fid_status = ""
-        os.makedirs('db', exist_ok=True)
-        db_path = 'db/users.sqlite'
+        db_dir = 'db'
+        os.makedirs(db_dir, exist_ok=True)
+        db_path = os.path.join(db_dir, 'users.sqlite')
         # Determine if the users database already exists before writing to it
         file_exists = os.path.exists(db_path)
         try:
