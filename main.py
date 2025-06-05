@@ -263,7 +263,6 @@ if __name__ == "__main__":
             'changes.sqlite',
             'users.sqlite',
             'settings.sqlite',
-            'profile.sqlite',
         ]
 
         for fname in required_files:
@@ -370,7 +369,6 @@ if __name__ == "__main__":
         await bot.load_extension("cogs.id_channel")
         await bot.load_extension("cogs.backup_operations")
         await bot.load_extension("cogs.bear_trap_editor")
-        await bot.load_extension("cogs.user_profile")
 
     @bot.event
     async def on_ready():

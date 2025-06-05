@@ -53,7 +53,6 @@ Since the release of V4, we've implemented numerous changes and improvements. He
 - Alliance Control Messages toggle in Bot Operations menu
 - Customizable progress notifications
 - Enhanced user experience
-- Member Profile system with slash commands
 
 ## 🌟 Support & Community
 Join our Discord community for:
