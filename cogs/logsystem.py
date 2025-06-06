@@ -472,7 +472,10 @@ class LogSystem(commands.Cog):
                     alliance_result = self.alliance_cursor.fetchone()
                     alliance_name = alliance_result[0] if alliance_result else "Unknown Alliance"
 
-                    channel = interaction.guild.get_channel(channel_id)
+                    if interaction.guild:
+                        channel = interaction.guild.get_channel(channel_id)
+                    else:
+                        channel = interaction.client.get_channel(channel_id)
                     channel_name = channel.name if channel else "Unknown Channel"
 
                     list_embed.add_field(

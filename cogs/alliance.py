@@ -51,7 +51,7 @@ class Alliance(commands.Cog):
             return
 
         is_initial = admin[1]
-        guild_id = interaction.guild.id
+        guild_id = interaction.guild.id if interaction.guild else None
 
         try:
             if is_initial == 1:
@@ -63,6 +63,12 @@ class Alliance(commands.Cog):
                 """
                 self.c.execute(query)
             else:
+                if guild_id is None:
+                    await interaction.response.send_message(
+                        "This command can only be used within a server.",
+                        ephemeral=True
+                    )
+                    return
                 query = """
                     SELECT a.alliance_id, a.name, COALESCE(s.interval, 0) as interval
                     FROM alliance_list a
