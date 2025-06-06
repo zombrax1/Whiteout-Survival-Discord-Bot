@@ -518,7 +518,7 @@ class BotOperations(commands.Cog):
                                         f"👤 **Name:** `{admin_name}`\n"
                                         f"🆔 **Discord ID:** `{selected_admin_id}`\n"
                                         f"👤 **Access Level:** `{'Global Admin' if admin_info[1] == 1 else 'Server Admin'}`\n"
-                                        f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Server + Special Access'}`\n"
+                                        f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Assigned Alliances'}`\n"
                                         f"📊 **Available Alliances:** `{len(alliance_names)}`\n"
                                         "━━━━━━━━━━━━━━━━━━━━━━\n"
                                     ),
@@ -903,7 +903,7 @@ class BotOperations(commands.Cog):
                             f"👤 **Name:** {admin_name}\n"
                             f"🆔 **ID:** {admin_id}\n"
                             f"👑 **Role:** {'Global Admin' if is_initial == 1 else 'Server Admin'}\n"
-                            f"🔍 **Access Type:** {'All Alliances' if is_initial == 1 else 'Server + Special Access'}\n"
+                            f"🔍 **Access Type:** {'All Alliances' if is_initial == 1 else 'Assigned Alliances'}\n"
                         )
 
                         if alliance_names:

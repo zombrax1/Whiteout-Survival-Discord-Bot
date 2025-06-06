@@ -234,8 +234,7 @@ I love this community and thank you all for being part of this journey. ❤️
 - This feature adds admin to your bot. 
 - After pressing it, it asks you to tag the admin
     - The administrators you add cannot access all settings.
-    - They can only see and manage alliances in the discord they are in.
-    - They can also see specially authorized alliances
+    - Server admins can manage only the alliances assigned to them.
 
 ### ➖ Remove Admin
 
@@ -249,7 +248,7 @@ I love this community and thank you all for being part of this journey. ❤️
 ### 🔗 Assign Alliance to Admin
 
 - Allows you to assign a custom alliance management to the admins you add
-- This is done in different discord server so that the admins you want can see the other alliances
+- You can assign alliances from any server to the admins you add
 
 ### ➖ Delete Admin Permissions
 
