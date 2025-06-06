@@ -723,6 +723,7 @@ class BotOperations(commands.Cog):
                         )
 
                         options = []
+                        option_map = {}
                         for admin_id, is_initial, alliance_id, alliance_name in admin_alliance_info:
                             try:
                                 user = await interaction.client.fetch_user(admin_id)
@@ -741,6 +742,7 @@ class BotOperations(commands.Cog):
                                     emoji="👑" if is_initial == 1 else "👤"
                                 )
                             )
+                            option_map[f"{admin_id}:{alliance_id}"] = (admin_name, alliance_name)
 
                         if not options:
                             await interaction.response.send_message(
@@ -758,7 +760,8 @@ class BotOperations(commands.Cog):
                         async def select_callback(select_interaction: discord.Interaction):
                             try:
                                 admin_id, alliance_id = select.values[0].split(":")
-                                
+                                admin_name, alliance_name = option_map.get(f"{admin_id}:{alliance_id}", ("Unknown", "Unknown"))
+
                                 confirm_embed = discord.Embed(
                                     title="⚠️ Confirm Permission Removal",
                                     description=(
