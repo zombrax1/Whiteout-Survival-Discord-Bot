@@ -1,3 +1,27 @@
+🚀 Improvement Log (2025-06-06)
+
+🖴 Selectable backup storage – pick local 🏠 or remote ☁️ via environment variables; backup lists & manual runs now show the chosen target.
+
+🔒 Scoped admin access – admins can operate only within their Assigned Alliances; stricter checks and updated embed wording enforce this.
+
+🧪 Admin test suite – fresh automated tests cover the new permission logic.
+
+📑 Safe log retrieval – works cleanly in both guild channels 🏰 and DMs 💌.
+
+🐛 Bug fixes
+• Refined FID insertion logic
+• Auto-creates missing databases
+• Removed obsolete user-profile feature
+
+✨ Existing Features
+
+🎁 Gift-Code Engine – auto-redeems alliance codes for members.
+
+🔄 Flexible backups – seamless local 🖴 or remote ☁️ storage.
+
+🔗 ID Channel – automatically adds members on join.
+
+🛠 Issue tracker – 90 % of reported issues resolved; ongoing maintenance continues.
 
 # V4 Mass Update List (25.02.2025)
 
