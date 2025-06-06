@@ -250,11 +250,19 @@ class BotOperations(commands.Cog):
                                             
                                             with sqlite3.connect('db/settings.sqlite') as settings_db:
                                                 cursor = settings_db.cursor()
-                                                cursor.execute("""
-                                                    INSERT INTO adminserver (admin, alliances_id)
-                                                    VALUES (?, ?)
-                                                """, (selected_admin_id, selected_alliance_id))
-                                                settings_db.commit()
+                                                cursor.execute(
+                                                    "SELECT 1 FROM adminserver WHERE admin = ? AND alliances_id = ?",
+                                                    (selected_admin_id, selected_alliance_id)
+                                                )
+                                                exists = cursor.fetchone()
+                                                if not exists:
+                                                    cursor.execute(
+                                                        "INSERT INTO adminserver (admin, alliances_id) VALUES (?, ?)",
+                                                        (selected_admin_id, selected_alliance_id)
+                                                    )
+                                                    settings_db.commit()
+                                                else:
+                                                    raise ValueError("Alliance already assigned")
 
                                             with sqlite3.connect('db/alliance.sqlite') as alliance_db:
                                                 cursor = alliance_db.cursor()
@@ -289,6 +297,11 @@ class BotOperations(commands.Cog):
                                                     view=None
                                                 )
                                             
+                                        except ValueError as e:
+                                            if not alliance_interaction.response.is_done():
+                                                await alliance_interaction.response.send_message(str(e), ephemeral=True)
+                                            else:
+                                                await alliance_interaction.followup.send(str(e), ephemeral=True)
                                         except Exception as e:
                                             print(f"Alliance callback error: {e}")
                                             if not alliance_interaction.response.is_done():

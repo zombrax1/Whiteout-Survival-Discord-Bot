@@ -1,7 +1,10 @@
 import os
+import sys
 import sqlite3
 import asyncio
 import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from cogs.alliance_member_operations import AllianceMemberOperations
 
