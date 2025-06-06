@@ -88,61 +88,45 @@ class Changes(commands.Cog):
                 cursor = settings_db.cursor()
                 cursor.execute("SELECT is_initial FROM admin WHERE id = ?", (user_id,))
                 admin_result = cursor.fetchone()
-                
+
                 if not admin_result:
                     print(f"User {user_id} is not an admin")
                     return [], [], False
-                    
+
                 is_initial = admin_result[0]
-                
+
             if is_initial == 1:
                 with sqlite3.connect('db/alliance.sqlite') as alliance_db:
                     cursor = alliance_db.cursor()
                     cursor.execute("SELECT alliance_id, name FROM alliance_list ORDER BY name")
                     alliances = cursor.fetchall()
                     return alliances, [], True
-            
-            server_alliances = []
-            special_alliances = []
-            
-            with sqlite3.connect('db/alliance.sqlite') as alliance_db:
-                cursor = alliance_db.cursor()
-                cursor.execute("""
-                    SELECT DISTINCT alliance_id, name 
-                    FROM alliance_list 
-                    WHERE discord_server_id = ?
-                    ORDER BY name
-                """, (guild_id,))
-                server_alliances = cursor.fetchall()
-            
+
             with sqlite3.connect('db/settings.sqlite') as settings_db:
                 cursor = settings_db.cursor()
                 cursor.execute("""
-                    SELECT alliances_id 
-                    FROM adminserver 
+                    SELECT alliances_id
+                    FROM adminserver
                     WHERE admin = ?
                 """, (user_id,))
-                special_alliance_ids = cursor.fetchall()
-                
-            if special_alliance_ids:
-                with sqlite3.connect('db/alliance.sqlite') as alliance_db:
-                    cursor = alliance_db.cursor()
-                    placeholders = ','.join('?' * len(special_alliance_ids))
-                    cursor.execute(f"""
-                        SELECT DISTINCT alliance_id, name
-                        FROM alliance_list
-                        WHERE alliance_id IN ({placeholders})
-                        ORDER BY name
-                    """, [aid[0] for aid in special_alliance_ids])
-                    special_alliances = cursor.fetchall()
-            
-            all_alliances = list({(aid, name) for aid, name in (server_alliances + special_alliances)})
-            
-            if not all_alliances and not special_alliances:
+                alliance_ids = [row[0] for row in cursor.fetchall()]
+
+            if not alliance_ids:
                 return [], [], False
-            
-            return all_alliances, special_alliances, False
-                
+
+            with sqlite3.connect('db/alliance.sqlite') as alliance_db:
+                cursor = alliance_db.cursor()
+                placeholders = ','.join('?' * len(alliance_ids))
+                cursor.execute(f"""
+                    SELECT alliance_id, name
+                    FROM alliance_list
+                    WHERE alliance_id IN ({placeholders})
+                    ORDER BY name
+                """, alliance_ids)
+                alliances = cursor.fetchall()
+
+            return alliances, [], False
+
         except Exception as e:
             print(f"Error in get_admin_alliances: {e}")
             return [], [], False
@@ -442,7 +426,7 @@ class HistoryView(discord.ui.View):
 
             special_alliance_text = ""
             if special_alliances:
-                special_alliance_text = "\n\n**Special Access Alliances**\n"
+                special_alliance_text = "\n\n**Assigned Alliances**\n"
                 special_alliance_text += "━━━━━━━━━━━━━━━━━━━━━━\n"
                 for _, name in special_alliances:
                     special_alliance_text += f"🔸 {name}\n"
@@ -455,7 +439,7 @@ class HistoryView(discord.ui.View):
                     "**Permission Details**\n"
                     "━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"👤 **Access Level:** `{'Global Admin' if admin_info[1] == 1 else 'Server Admin'}`\n"
-                    f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Server + Special Access'}`\n"
+                    f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Assigned Alliances'}`\n"
                     f"📊 **Available Alliances:** `{len(alliances)}`\n"
                     "━━━━━━━━━━━━━━━━━━━━━━"
                     f"{special_alliance_text}"
@@ -591,7 +575,7 @@ class HistoryView(discord.ui.View):
 
             special_alliance_text = ""
             if special_alliances:
-                special_alliance_text = "\n\n**Special Access Alliances**\n"
+                special_alliance_text = "\n\n**Assigned Alliances**\n"
                 special_alliance_text += "━━━━━━━━━━━━━━━━━━━━━━\n"
                 for _, name in special_alliances:
                     special_alliance_text += f"🔸 {name}\n"
@@ -604,7 +588,7 @@ class HistoryView(discord.ui.View):
                     "**Permission Details**\n"
                     "━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"👤 **Access Level:** `{'Global Admin' if admin_info[1] == 1 else 'Server Admin'}`\n"
-                    f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Server + Special Access'}`\n"
+                    f"🔍 **Access Type:** `{'All Alliances' if admin_info[1] == 1 else 'Assigned Alliances'}`\n"
                     f"📊 **Available Alliances:** `{len(alliances)}`\n"
                     "━━━━━━━━━━━━━━━━━━━━━━"
                     f"{special_alliance_text}"
