@@ -52,8 +52,6 @@ Since the release of V4, we've implemented numerous changes and improvements. He
   - 17:55 (5 minutes before)
   - 18:00 (Event start)
   ```
-- Web interface for notification management
-  - Visit: [wos-giftcode.centurygame.com/notification](https://wos-giftcode.centurygame.com/notification)
 
 ## 💾 Backup System
 - Automatic database backup
