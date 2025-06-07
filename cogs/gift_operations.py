@@ -203,7 +203,7 @@ class GiftOperations(commands.Cog):
                 self.cursor.execute("SELECT 1 FROM gift_codes WHERE giftcode = ?", (giftcode,))
                 if not self.cursor.fetchone():
                     self.cursor.execute(
-                        "INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)",
+                        "INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)",
                         (giftcode, datetime.now().strftime("%Y-%m-%d"))
                     )
                     self.conn.commit()
@@ -484,7 +484,7 @@ class GiftOperations(commands.Cog):
                                 self.cursor.execute("SELECT 1 FROM gift_codes WHERE giftcode = ?", (giftcode,))
                                 if not self.cursor.fetchone():
                                     self.cursor.execute(
-                                        "INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)",
+                                        "INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)",
                                         (giftcode, datetime.now().strftime("%Y-%m-%d"))
                                     )
                                     self.conn.commit()
@@ -546,7 +546,7 @@ class GiftOperations(commands.Cog):
                                     self.cursor.execute("SELECT 1 FROM gift_codes WHERE giftcode = ?", (giftcode,))
                                     if not self.cursor.fetchone():
                                         self.cursor.execute(
-                                            "INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)",
+                                            "INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)",
                                             (giftcode, datetime.now().strftime("%Y-%m-%d"))
                                         )
                                         self.conn.commit()
@@ -636,7 +636,7 @@ class GiftOperations(commands.Cog):
         if status in ["SUCCESS", "RECEIVED", "SAME TYPE EXCHANGE"]:
             self.cursor.execute("SELECT 1 FROM gift_codes WHERE giftcode = ?", (giftcode,))
             if not self.cursor.fetchone():
-                self.cursor.execute("INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)", (giftcode, datetime.now()))
+                self.cursor.execute("INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)", (giftcode, datetime.now()))
                 self.conn.commit()
                 
                 try:
@@ -660,7 +660,7 @@ class GiftOperations(commands.Cog):
         if status in ["SUCCESS", "RECEIVED", "SAME TYPE EXCHANGE"]:
             self.cursor.execute("SELECT 1 FROM gift_codes WHERE giftcode = ?", (giftcode,))
             if not self.cursor.fetchone():
-                self.cursor.execute("INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)", (giftcode, datetime.now()))
+                self.cursor.execute("INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)", (giftcode, datetime.now()))
                 self.conn.commit()
                 
                 try:
@@ -1890,7 +1890,7 @@ class CreateGiftCodeModal(discord.ui.Modal):
                     date = datetime.now().strftime("%Y-%m-%d")
                     
                     self.cog.cursor.execute(
-                        "INSERT INTO gift_codes (giftcode, date) VALUES (?, ?)",
+                        "INSERT OR IGNORE INTO gift_codes (giftcode, date) VALUES (?, ?)",
                         (code, date)
                     )
                     self.cog.conn.commit()

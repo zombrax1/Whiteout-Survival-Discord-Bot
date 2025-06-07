@@ -9,8 +9,6 @@ import tempfile
 import shutil
 import pyzipper
 import traceback
-import aiohttp
-import ssl
 
 class BackupOperations(commands.Cog):
     def __init__(self, bot):
@@ -18,12 +16,7 @@ class BackupOperations(commands.Cog):
         self.db_path = "db/backup.sqlite"
         self.log_path = "log/backuplog.txt"
         self.backup_dir = os.getenv("BACKUP_DIR", "backups")
-        self.api_url = os.getenv(
-            "BACKUP_API_URL",
-            "https://wosland.com/apidc/backup_api/backup_api.php",
-        )
-        self.api_key = os.getenv("BACKUP_API_KEY", "serioyun_backup_api_key_2024")
-        self.default_storage = os.getenv("DEFAULT_BACKUP_STORAGE", "local")
+        self.default_storage = "local"
 
         os.makedirs("log", exist_ok=True)
         os.makedirs(self.backup_dir, exist_ok=True)
@@ -219,36 +212,11 @@ Thank you for using our bot! ❤️
                     print(f"Backup file size exceeds 2MB limit for user {user_id}")
                     return None
 
-                if storage == "remote":
-                    ssl_context = ssl.create_default_context()
-                    ssl_context.check_hostname = False
-                    ssl_context.verify_mode = ssl.CERT_NONE
-
-                    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
-                        with open(secured_zip, "rb") as f:
-                            data = aiohttp.FormData()
-                            data.add_field("file", f)
-                            data.add_field("discord_id", str(user_id))
-                            data.add_field("timestamp", timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-
-                            headers = {"X-API-Key": self.api_key}
-                            async with session.post(f"{self.api_url}?action=upload", data=data, headers=headers) as response:
-                                if response.status == 200:
-                                    result = await response.json()
-                                    file_url = result.get("file_url")
-                                    if file_url:
-                                        file_url = f"{file_url}&api_key={self.api_key}"
-                                    return file_url
-                                else:
-                                    error_text = await response.text()
-                                    print(f"API Error: {error_text}")
-                                    return None
-                else:
-                    user_dir = os.path.join(self.backup_dir, str(user_id))
-                    os.makedirs(user_dir, exist_ok=True)
-                    final_path = os.path.join(user_dir, os.path.basename(secured_zip))
-                    shutil.move(secured_zip, final_path)
-                    return final_path
+                user_dir = os.path.join(self.backup_dir, str(user_id))
+                os.makedirs(user_dir, exist_ok=True)
+                final_path = os.path.join(user_dir, os.path.basename(secured_zip))
+                shutil.move(secured_zip, final_path)
+                return final_path
 
         except Exception as e:
             print(f"Backup creation error: {e}")
@@ -258,33 +226,19 @@ Thank you for using our bot! ❤️
     async def get_backup_list(self, user_id: str, storage: str = None):
         try:
             storage = storage or self.default_storage
-            if storage == "remote":
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
+            user_dir = os.path.join(self.backup_dir, str(user_id))
+            if not os.path.exists(user_dir):
+                return []
 
-                async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
-                    headers = {"X-API-Key": self.api_key}
-                    params = {"discord_id": user_id, "action": "list"}
-                    async with session.get(self.api_url, params=params, headers=headers) as response:
-                        if response.status == 200:
-                            result = await response.json()
-                            return result
-                        return []
-            else:
-                user_dir = os.path.join(self.backup_dir, str(user_id))
-                if not os.path.exists(user_dir):
-                    return []
+            backups = []
+            for file in os.listdir(user_dir):
+                if file.endswith('.zip'):
+                    path = os.path.join(user_dir, file)
+                    timestamp = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
+                    backups.append({'path': path, 'timestamp': timestamp})
 
-                backups = []
-                for file in os.listdir(user_dir):
-                    if file.endswith('.zip'):
-                        path = os.path.join(user_dir, file)
-                        timestamp = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
-                        backups.append({'path': path, 'timestamp': timestamp})
-
-                backups.sort(key=lambda x: x['timestamp'], reverse=True)
-                return backups
+            backups.sort(key=lambda x: x['timestamp'], reverse=True)
+            return backups
         except Exception as e:
             traceback.print_exc()
             return []
@@ -378,18 +332,11 @@ class BackupMethodView(discord.ui.View):
                 description="Backup created successfully!",
                 color=discord.Color.green(),
             )
-            if storage == "remote":
-                embed.add_field(
-                    name="📥 Download Link",
-                    value=f"[Click here to download]({result})",
-                    inline=False,
-                )
-            else:
-                embed.add_field(
-                    name="📂 Saved Path",
-                    value=f"`{result}`",
-                    inline=False,
-                )
+            embed.add_field(
+                name="📂 Saved Path",
+                value=f"`{result}`",
+                inline=False,
+            )
             embed.add_field(
                 name="🔐 File Password",
                 value="Use your backup password",
@@ -424,9 +371,6 @@ class BackupMethodView(discord.ui.View):
     async def local(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._process(interaction, "local")
 
-    @discord.ui.button(label="Remote", emoji="☁️", style=discord.ButtonStyle.primary)
-    async def remote(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self._process(interaction, "remote")
 
     @discord.ui.button(label="Main Menu", emoji="🏠", style=discord.ButtonStyle.secondary, row=1)
     async def main_menu(self, interaction: discord.Interaction, button: discord.ui.Button):

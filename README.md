@@ -1,6 +1,5 @@
 🚀 Improvement Log (2025-06-06)
 
-🖴 Selectable backup storage – pick local 🏠 or remote ☁️ via environment variables; backup lists & manual runs now show the chosen target.
 
 🔒 Scoped admin access – admins can operate only within their Assigned Alliances; stricter checks and updated embed wording enforce this.
 
@@ -17,7 +16,7 @@
 
 🎁 Gift-Code Engine – auto-redeems alliance codes for members.
 
-🔄 Flexible backups – seamless local 🖴 or remote ☁️ storage.
+🔄 Flexible backups – automatically save your data locally.
 
 🔗 ID Channel – automatically adds members on join.
 
@@ -53,16 +52,12 @@ Since the release of V4, we've implemented numerous changes and improvements. He
   - 17:55 (5 minutes before)
   - 18:00 (Event start)
   ```
-- Web interface for notification management
-  - Visit: [wosland.com/notification](https://wosland.com/notification)
 
 ## 💾 Backup System
 - Automatic database backup
 - Secure encrypted backups (.zip format)
 - Personal encryption key system
-- Choose local or remote storage
-  - Local path configurable via `BACKUP_DIR`
-  - Remote uploads to wosland API (`BACKUP_API_URL` & `BACKUP_API_KEY`)
+- Local path configurable via `BACKUP_DIR`
 - Enhanced data privacy
   - Only member IDs are stored
   - Encrypted access
@@ -92,7 +87,7 @@ We continue to:
 - Add new features
 - Improve system stability
 
-Have a great day! 
+Have a great day!
 
 ---
 *For more information and support, visit our [Discord Server](https://discord.gg/h8w6N6my4a)*

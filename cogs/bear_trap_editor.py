@@ -26,7 +26,7 @@ class CodeInputModal(discord.ui.Modal):
             embed_data = self.editor_cog.decode_embed_data(self.code_input.value)
             if not embed_data:
                 await interaction.response.send_message(
-                    "❌ Invalid code! Please use the code from web panel.",
+                    "❌ Invalid code! Please provide a valid embed code.",
                     ephemeral=True
                 )
                 return
@@ -162,85 +162,6 @@ class NotificationEditView(discord.ui.View):
         self.editor_cog = editor_cog
         self.notification_id = notification_id
 
-    @discord.ui.button(label="Edit on Web Panel", style=discord.ButtonStyle.primary, emoji="🌐")
-    async def edit_web_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        try:
-            bear_trap = self.editor_cog.bot.get_cog('BearTrap')
-            if not bear_trap:
-                await interaction.response.send_message(
-                    "❌ Bear Trap module not found!",
-                    ephemeral=True
-                )
-                return
-
-            bear_trap.cursor.execute("""
-                SELECT n.*, e.* 
-                FROM bear_notifications n 
-                LEFT JOIN bear_notification_embeds e ON n.id = e.notification_id 
-                WHERE n.id = ? AND n.guild_id = ?
-            """, (self.notification_id, interaction.guild_id))
-            
-            result = bear_trap.cursor.fetchone()
-            if not result:
-                await interaction.response.send_message(
-                    "❌ Notification not found!",
-                    ephemeral=True
-                )
-                return
-
-            notification_columns = 16
-
-            embed_data = {
-                'title': result[18] if result[18] else "Bear Trap Notification",
-                'description': result[19] if result[19] else "Get ready for Bear! Only %t remaining.",
-                'color': result[20] if result[20] else 3447003,
-                'image_url': result[21] if result[21] else None,
-                'thumbnail_url': result[22] if result[22] else None,
-                'footer': result[23] if result[23] else "Bear Trap Notification System",
-                'author': result[24] if result[24] else None,
-                'mention_message': result[25] if result[25] else "30 minutes @tag sa as",
-                'notification': {
-                    'date': result[15].strftime('%Y-%m-%d') if isinstance(result[15], datetime) else datetime.fromisoformat(str(result[15])).strftime('%Y-%m-%d'),
-                    'hour': result[3],
-                    'minute': result[4],
-                    'timezone': result[5],
-                    'type': result[7],
-                    'repeat_enabled': bool(result[9]),
-                    'repeat_minutes': result[10],
-                    'custom_times': result[6].split('|')[0].replace('CUSTOM_TIMES:', '') if result[6].startswith('CUSTOM_TIMES:') else None
-                }
-            }
-
-            for key in list(embed_data.keys()):
-                if embed_data[key] is None:
-                    del embed_data[key]
-
-            for key in list(embed_data['notification'].keys()):
-                if embed_data['notification'][key] is None:
-                    del embed_data['notification'][key]
-
-            json_str = json.dumps(embed_data)
-            encoded_data = urllib.parse.quote(json_str)
-            edit_url = f"https://wosland.com/notification/notification.php?data={encoded_data}"
-            
-            embed = discord.Embed(
-                title="🔄 Notification Edit",
-                description=(
-                    f"**Notification ID:** {self.notification_id}\n\n"
-                    f"1️⃣ [Click to go to edit page]({edit_url})\n"
-                    "2️⃣ Make necessary changes\n"
-                    "3️⃣ Use the 'Apply Code' button to use the code you received"
-                ),
-                color=discord.Color.blue()
-            )
-            await interaction.response.edit_message(embed=embed, view=self)
-            
-        except Exception as e:
-            print(f"Error generating edit URL: {e}")
-            await interaction.response.send_message(
-                "❌ Error generating edit URL!",
-                ephemeral=True
-            )
 
     @discord.ui.button(label="Apply Code", style=discord.ButtonStyle.success, emoji="💾")
     async def apply_code_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -496,7 +417,6 @@ class BearTrapEditor(commands.Cog):
 
             json_str = json.dumps(embed_data)
             encoded_data = urllib.parse.quote(json_str)
-            self.edit_url = f"https://wosland.com/notification/notification.php?data={encoded_data}"
             
             paste_button = discord.ui.Button(
                 label="Paste Embed",
@@ -515,40 +435,6 @@ class BearTrapEditor(commands.Cog):
                         ephemeral=True
                     )
 
-            paste_button.callback = paste_button_callback
-            self.add_item(paste_button)
-
-        async def start_setup(self, interaction: discord.Interaction):
-            try:
-                embed = discord.Embed(
-                    title="🌐 Notification Creation on Web Site",
-                    description=(
-                        f"1️⃣ [Click to go to edit page]({self.edit_url})\n"
-                        "2️⃣ Make necessary changes\n"
-                        "3️⃣ Use 'Paste Embed' button to use the code you received"
-                    ),
-                    color=discord.Color.blue()
-                )
-
-                await interaction.response.edit_message(embed=embed, view=self)
-
-            except Exception as e:
-                error_msg = f"[ERROR] Error in web setup: {str(e)}\nType: {type(e)}\nTrace: {traceback.format_exc()}"
-                print(error_msg)
-                
-                try:
-                    if not interaction.response.is_done():
-                        await interaction.response.send_message(
-                            "❌ Error starting web process!",
-                            ephemeral=True
-                        )
-                    else:
-                        await interaction.followup.send(
-                            "❌ Error starting web process!",
-                            ephemeral=True
-                        )
-                except Exception as notify_error:
-                    print(f"[ERROR] Failed to notify user about error: {notify_error}")
 
     def decode_embed_data(self, code):
         try:

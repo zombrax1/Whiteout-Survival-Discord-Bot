@@ -1795,37 +1795,6 @@ class BearTrapView(discord.ui.View):
 
             discord_button.callback = discord_button_callback
 
-            web_button = discord.ui.Button(
-                label="Create on Website",
-                emoji="🌐", 
-                style=discord.ButtonStyle.success,
-                custom_id="create_in_web"
-            )
-
-            async def web_button_callback(web_interaction):
-                try:
-                    editor_cog = self.cog.bot.get_cog('BearTrapEditor')
-                    if not editor_cog:
-                        await web_interaction.response.send_message(
-                            "❌ BearTrapEditor module not found!",
-                            ephemeral=True
-                        )
-                        return
-
-                    view = editor_cog.TimeSelectOptionsView(editor_cog)
-                    await view.start_setup(web_interaction)
-
-                except Exception as e:
-                    print(f"Error in web button: {e}")
-                    await web_interaction.response.send_message(
-                        "❌ An error occurred while starting the website process!",
-                        ephemeral=True
-                    )
-
-            web_button.callback = web_button_callback
-
-            view.add_item(discord_button)
-            view.add_item(web_button)
 
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
