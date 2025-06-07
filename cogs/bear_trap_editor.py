@@ -221,7 +221,7 @@ class NotificationEditView(discord.ui.View):
 
             json_str = json.dumps(embed_data)
             encoded_data = urllib.parse.quote(json_str)
-            edit_url = f"https://wosland.com/notification/notification.php?data={encoded_data}"
+            edit_url = f"https://wos-giftcode.centurygame.com/notification?data={encoded_data}"
             
             embed = discord.Embed(
                 title="🔄 Notification Edit",
@@ -496,7 +496,7 @@ class BearTrapEditor(commands.Cog):
 
             json_str = json.dumps(embed_data)
             encoded_data = urllib.parse.quote(json_str)
-            self.edit_url = f"https://wosland.com/notification/notification.php?data={encoded_data}"
+            self.edit_url = f"https://wos-giftcode.centurygame.com/notification?data={encoded_data}"
             
             paste_button = discord.ui.Button(
                 label="Paste Embed",

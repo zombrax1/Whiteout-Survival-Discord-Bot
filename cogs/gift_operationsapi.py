@@ -12,8 +12,11 @@ import ssl
 class GiftCodeAPI:
     def __init__(self, bot):
         self.bot = bot
-        self.api_url = "https://wosland.com/apidc/giftapi/giftcode_api.php"
-        self.api_key = "serioyun_gift_api_key_2024"
+        self.api_url = os.getenv(
+            "GIFT_CODE_API_URL",
+            "https://wos-giftcode.centurygame.com/api/v1/gift",
+        )
+        self.api_key = os.getenv("GIFT_CODE_API_KEY", "serioyun_gift_api_key_2024")
         self.check_interval = 300
         
         if hasattr(bot, 'conn'):
@@ -91,7 +94,13 @@ class GiftCodeAPI:
                                     continue
                                     
                                 try:
-                                    date_obj = datetime.strptime(date_str, "%d.%m.%Y")
+                                    if re.match(r"^\d{2}\.\d{2}\.\d{4}$", date_str):
+                                        date_obj = datetime.strptime(date_str, "%d.%m.%Y")
+                                    elif re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+                                        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                                    else:
+                                        raise ValueError("Invalid date format")
+
                                     valid_codes.append((code, date_obj))
                                 except ValueError:
                                     invalid_codes.append(code_line)
@@ -105,7 +114,8 @@ class GiftCodeAPI:
                                         
                                         async with session.delete(self.api_url, json=data, headers=headers) as del_response:
                                             if del_response.status == 200:
-                                                pass
+                                                self.cursor.execute("DELETE FROM gift_codes WHERE giftcode = ?", (code,))
+                                                self.conn.commit()
                                             else:
                                                 pass
                                         
